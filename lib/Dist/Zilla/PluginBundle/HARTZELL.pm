@@ -2,7 +2,230 @@
 use strict;
 use warnings;
 package Dist::Zilla::PluginBundle::HARTZELL;
-# ABSTRACT: The way that hartzell builds dists.
+
+# ABSTRACT: Implement hartzell's way.
+
+=head1 SYNOPSIS
+
+   # in dist.ini
+   [@HARTZELL]
+
+=head1 DESCRIPTION
+
+This, a L<Dist::Zilla> PluginBundle that builds things the way that I
+do, is a work in progress.
+
+I left my standard PluginBundle behind when I left my previous job and
+I've discovered that I've fallen behind the state of the art.  This is
+my attempt to catch back up.  After browsing the bevy of bundles on
+CPAN I decided to model mine on DAGOLDEN's (I like his use of
+ConfigSlicer and various config options).  As it stands now it's
+nearly a copy of his work but as my personal preferences assert
+themselves I expect it to diverge.  For now I have a lot of
+github-ishness and Meta info stuff to catch up on.
+
+It is roughly equivalent to the following dist.ini:
+
+   ; version provider
+   [Git::NextVersion]  ; get version from last release tag
+   version_regexp = ^release-(.+)$
+ 
+   ; choose files to include
+   [Git::GatherDir]         ; everything from git ls-files
+   exclude_filename = README.pod   ; skip this generated file
+   exclude_filename = META.json    ; skip this generated file
+ 
+   [PruneCruft]        ; default stuff to skip
+   [ManifestSkip]      ; if -f MANIFEST.SKIP, skip those, too
+ 
+   ; file modifications
+   [PkgVersion]        ; add $VERSION = ... to all files
+   [InsertCopyright]   ; add copyright at "# COPYRIGHT"
+   [PodWeaver]         ; generate Pod
+   config_plugin = @DEFAULT
+ 
+   ; generated files
+   [License]           ; boilerplate license
+   [ReadmeFromPod]     ; from Pod (runs after PodWeaver)
+   [ReadmeAnyFromPod]  ; create README.md in repo directory
+   type = md           ; this makes github happy....
+   filename = README.md
+   location = root
+ 
+   ; t tests
+   [Test::Compile]     ; make sure .pm files all compile
+   fake_home = 1       ; fakes $ENV{HOME} just in case
+ 
+   ; xt tests
+   [Test::PodSpelling] ; xt/author/pod-spell.t
+   [Test::Perl::Critic]; xt/author/critic.t
+   [MetaTests]         ; xt/release/meta-yaml.t
+   [PodSyntaxTests]    ; xt/release/pod-syntax.t
+   [PodCoverageTests]  ; xt/release/pod-coverage.t
+   [Test::Portability] ; xt/release/portability.t (of file name)
+   [Test::Version]     ; xt/release/test-version.t
+ 
+   ; metadata
+   [AutoPrereqs]       ; find prereqs from code
+   skip = ^t::lib
+ 
+   [MinimumPerl]       ; determine minimum perl version
+ 
+   [MetaNoIndex]       ; sets 'no_index' in META
+   directory = t
+   directory = xt
+   directory = examples
+   directory = corpus
+   package = DB        ; just in case
+ 
+   [AutoMetaResources] ; set META resources
+   bugtracker.github  = user:hartzell
+   repository.github  = user:hartzell
+   homepage           = https://metacpan.org/release/%{dist}
+ 
+   [MetaProvides::Package] ; add 'provides' to META files
+   meta_noindex = 1        ; respect prior no_index directives
+ 
+   [MetaYAML]          ; generate META.yml (v1.4)
+   [MetaJSON]          ; generate META.json (v2)
+ 
+   ; build system
+   [ExecDir]           ; include 'bin/*' as executables
+   [ShareDir]          ; include 'share/' for File::ShareDir
+   [Module::Build]     ; create Build.PL
+ 
+   ; manifest (after all generated files)
+   [Manifest]          ; create MANIFEST
+ 
+   ; copy META.json back to repo dis
+   [CopyFilesFromBuild]
+   copy = META.json
+ 
+   ; before release
+   [Git::Check]        ; ensure all files checked in
+   allow_dirty = dist.ini
+   allow_dirty = Changes
+   allow_dirty = README.pod
+   allow_dirty = META.json
+ 
+   [CheckMetaResources]     ; ensure META has 'resources' data
+   [CheckPrereqsIndexed]    ; ensure prereqs are on CPAN
+   [CheckChangesHasContent] ; ensure Changes has been updated
+   [CheckExtraTests]   ; ensure xt/ tests pass
+   [TestRelease]       ; ensure t/ tests pass
+   [ConfirmRelease]    ; prompt before uploading
+ 
+   ; releaser
+   [UploadToCPAN]      ; uploads to CPAN
+ 
+   ; after release
+   [Git::Commit / Commit_Dirty_Files] ; commit Changes (as released)
+ 
+   [Git::Tag]          ; tag repo with custom tag
+   tag_format = release-%v
+ 
+   ; NextRelease acts *during* pre-release to write $VERSION and
+   ; timestamp to Changes and  *after* release to add a new {{$NEXT}}
+   ; section, so to act at the right time after release, it must actually
+   ; come after Commit_Dirty_Files but before Commit_Changes in the
+   ; dist.ini.  It will still act during pre-release as usual
+ 
+   [NextRelease]
+ 
+   [Git::Commit / Commit_Changes] ; commit Changes (for new dev)
+ 
+   [Git::Push]         ; push repo to remote
+   push_to = origin
+
+
+=head1 USAGE
+
+To use this PluginBundle, just add it to your dist.ini.  You can provide
+the following options:
+
+=over
+
+=item *
+
+C<<< is_task >>> -- this indicates whether TaskWeaver or PodWeaver should be used.
+Default is 0.
+
+=item *
+
+C<<< auto_prereq >>> -- this indicates whether AutoPrereq should be used or not.
+Default is 1.
+
+=item *
+
+C<<< tag_format >>> -- given to C<<< Git::Tag >>>.  Default is 'release-%v' to be more
+robust than just the version number when parsing versions for
+C<<< Git::NextVersion >>>
+
+=item *
+
+C<<< version_regexp >>> -- given to C<<< Git::NextVersion >>>.  Default
+is '^release-(.+)$'
+
+=item *
+
+C<<< fake_release >>> -- swaps FakeRelease for UploadToCPAN. Mostly useful for
+testing a dist.ini without risking a real release.
+
+=item *
+
+C<<< weaver_config >>> -- specifies a Pod::Weaver bundle.  Defaults to @Default.
+
+=item *
+
+C<<< stopwords >>> -- add stopword for Test::PodSpelling (can be repeated)
+
+=item *
+
+C<<< no_critic >>> -- omit Test::Perl::Critic tests
+
+=item *
+
+C<<< no_spellcheck >>> -- omit Test::PodSpelling tests
+
+=item *
+
+C<<< no_bugtracker >>> -- DEPRECATED
+
+=back
+
+This PluginBundle now supports ConfigSlicer, so you can pass in options to the
+plugins used like this:
+
+   [@HARTZELL]
+   ExecDir.dir = scripts ; overrides ExecDir
+
+=head1 COMMON PATTERNS
+
+=head2 nothing much to see here for now....
+
+   [@HARTZELL]
+   :version = 0.32
+   fakerelease = 1
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<Dist::Zilla>
+
+=item *
+
+L<Dist::Zilla::Plugin::PodWeaver>
+
+=item *
+
+L<Dist::Zilla::Plugin::TaskWeaver>
+
+=back
+
+=cut
 
 use autodie 2.00;
 use Moose 0.99;
@@ -38,6 +261,10 @@ use Dist::Zilla::Plugin::Test::Version ();
 
 with 'Dist::Zilla::Role::PluginBundle::Easy';
 with 'Dist::Zilla::Role::PluginBundle::Config::Slicer';
+
+=for Pod::Coverage mvp_multivalue_args
+
+=cut
 
 sub mvp_multivalue_args { qw/stopwords/ }
 
@@ -115,7 +342,7 @@ has weaver_config => (
   is      => 'ro',
   isa     => 'Str',
   lazy    => 1,
-  default => sub { $_[0]->payload->{weaver_config} || '@DEFAULT' },
+  default => sub { $_[0]->payload->{weaver_config} || '@Default' },
 );
 
 has git_remote => (
@@ -134,6 +361,10 @@ has no_bugtracker => ( # XXX deprecated
   default => 0,
 );
 
+=for Pod::Coverage configure
+
+=cut
+
 sub configure {
   my $self = shift;
 
@@ -147,7 +378,7 @@ sub configure {
                      # gather and prune
                      # skip things that are also already in the build dir
                      [ 'Git::GatherDir' =>
-                       { exclude_filename => [qw/README.md META.json cpanfile/] }], # core
+                       { exclude_filename => [qw/README.pod META.json cpanfile/] }], # core
                      'PruneCruft',         # core
                      'ManifestSkip',       # core
 
@@ -156,16 +387,15 @@ sub configure {
                      'InsertCopyright',
                      ( $self->is_task
                        ?  'TaskWeaver'
-#                       : [ 'PodWeaver' => { config_plugin => $self->weaver_config } ]
-                       : 'PodWeaver'
+                       : [ 'PodWeaver' => { config_plugin => $self->weaver_config } ]
                      ),
 
                      # generated distribution files
                      'ReadmeFromPod',
                      'License',            # core
                      [ ReadmeAnyFromPod => { # generate in root for github, etc.
-                                            type => 'markdown',
-                                            filename => 'README.md',
+                                            type => 'pod',
+                                            filename => 'README.pod',
                                             location => 'root',
                                            }
                      ],
@@ -198,7 +428,7 @@ sub configure {
                      ['MetaProvides::Package' => { meta_noindex => 1 } ], # AFTER MetaNoIndex
                      [ AutoMetaResources => {
                                              'repository.github' => 'user:hartzell',
-                                             'bugtracker.rt' => 1,
+                                             'bugtracker.github' => 'user:hartzell',
                                              'homepage' => 'https://metacpan.org/release/%{dist}',
                                             }
                      ],
@@ -209,12 +439,11 @@ sub configure {
                      # build system
                      'ExecDir',            # core
                      'ShareDir',           # core
-#                     'MakeMaker',          # core
                      'ModuleBuild',          # core
 
                      # copy files from build back to root for inclusion in VCS
                      [ CopyFilesFromBuild => {
-                                              copy => ['META.json', 'cpanfile'],
+                                              copy => [ qw( cpanfile ) ],
                                              }
                      ],
                      
@@ -222,11 +451,11 @@ sub configure {
                      'Manifest',           # core
 
                      # before release
-#                     [ 'Git::Check' =>
-#                       {
-#                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
-#                       }
-#                     ],
+                     [ 'Git::Check' =>
+                       {
+                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
+                       }
+                     ],
                      'CheckMetaResources',
                      'CheckPrereqsIndexed',
                      'CheckChangesHasContent',
@@ -242,19 +471,19 @@ sub configure {
                      # git actions.  It is *also* a file munger that acts earlier
 
                      # commit dirty Changes, dist.ini, README.pod, META.json
-#                     [ 'Git::Commit' => 'Commit_Dirty_Files' =>
-#                       {
-#                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
-#                       }
-#                     ],
-#                     [ 'Git::Tag' => { tag_format => $self->tag_format } ],
+                     [ 'Git::Commit' => 'Commit_Dirty_Files' =>
+                       {
+                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
+                       }
+                     ],
+                     [ 'Git::Tag' => { tag_format => $self->tag_format } ],
                      
                      # bumps Changes
                      'NextRelease',        # core (also munges files)
                      
-#                     [ 'Git::Commit' => 'Commit_Changes' => { commit_msg => "bump Changes" } ],
+                     [ 'Git::Commit' => 'Commit_Changes' => { commit_msg => "bump Changes" } ],
                      
-#                     [ 'Git::Push' => { push_to => \@push_to } ],
+                     [ 'Git::Push' => { push_to => \@push_to } ],
                      
                     );
   
@@ -264,268 +493,5 @@ __PACKAGE__->meta->make_immutable;
 
 1;
 
-# ABSTRACT: Dist::Zilla configuration the way DAGOLDEN does it
-#
-# This file is part of Dist-Zilla-PluginBundle-DAGOLDEN
-#
-# This software is Copyright (c) 2012 by David Golden.
-#
-# This is free software, licensed under:
-#
-#   The Apache License, Version 2.0, January 2004
-#
-
 __END__
 
-=pod
-
-=head1 NAME
-
-Dist::Zilla::PluginBundle::DAGOLDEN - Dist::Zilla configuration the way DAGOLDEN does it
-
-=head1 SYNOPSIS
-
-   # in dist.ini
-   [@DAGOLDEN]
-
-=head1 DESCRIPTION
-
-This is a L<Dist::Zilla> PluginBundle.  It is roughly equivalent to the
-following dist.ini:
-
-   ; version provider
-   [Git::NextVersion]  ; get version from last release tag
-   version_regexp = ^release-(.+)$
- 
-   ; choose files to include
-   [Git::GatherDir]         ; everything from git ls-files
-   exclude_filename = README.pod   ; skip this generated file
-   exclude_filename = META.json    ; skip this generated file
- 
-   [PruneCruft]        ; default stuff to skip
-   [ManifestSkip]      ; if -f MANIFEST.SKIP, skip those, too
- 
-   ; file modifications
-   [OurPkgVersion]     ; add $VERSION = ... to all files
-   [InsertCopyright    ; add copyright at "# COPYRIGHT"
-   [PodWeaver]         ; generate Pod
-   config_plugin = @DEFAULT
- 
-   ; generated files
-   [License]           ; boilerplate license
-   [ReadmeFromPod]     ; from Pod (runs after PodWeaver)
-   [ReadmeAnyFromPod]  ; create README.pod in repo directory
-   type = pod
-   filename = README.pod
-   location = root
- 
-   ; t tests
-   [Test::Compile]     ; make sure .pm files all compile
-   fake_home = 1       ; fakes $ENV{HOME} just in case
- 
-   ; xt tests
-   [Test::PodSpelling] ; xt/author/pod-spell.t
-   [Test::Perl::Critic]; xt/author/critic.t
-   [MetaTests]         ; xt/release/meta-yaml.t
-   [PodSyntaxTests]    ; xt/release/pod-syntax.t
-   [PodCoverageTests]  ; xt/release/pod-coverage.t
-   [Test::Portability] ; xt/release/portability.t (of file name)
-   [Test::Version]     ; xt/release/test-version.t
- 
-   ; metadata
-   [AutoPrereqs]       ; find prereqs from code
-   skip = ^t::lib
- 
-   [MinimumPerl]       ; determine minimum perl version
- 
-   [MetaNoIndex]       ; sets 'no_index' in META
-   directory = t
-   directory = xt
-   directory = examples
-   directory = corpus
-   package = DB        ; just in case
- 
-   [AutoMetaResources] ; set META resources
-   bugtracker.rt      = 1
-   repository.github  = user:dagolden
-   homepage           = https://metacpan.org/release/%{dist}
- 
-   [MetaProvides::Package] ; add 'provides' to META files
-   meta_noindex = 1        ; respect prior no_index directives
- 
-   [MetaYAML]          ; generate META.yml (v1.4)
-   [MetaJSON]          ; generate META.json (v2)
- 
-   ; build system
-   [ExecDir]           ; include 'bin/*' as executables
-   [ShareDir]          ; include 'share/' for File::ShareDir
-   [MakeMaker]         ; create Makefile.PL
- 
-   ; manifest (after all generated files)
-   [Manifest]          ; create MANIFEST
- 
-   ; copy META.json back to repo dis
-   [CopyFilesFromBuild]
-   copy = META.json
- 
-   ; before release
-   [Git::Check]        ; ensure all files checked in
-   allow_dirty = dist.ini
-   allow_dirty = Changes
-   allow_dirty = README.pod
-   allow_dirty = META.json
- 
-   [CheckMetaResources]     ; ensure META has 'resources' data
-   [CheckPrereqsIndexed]    ; ensure prereqs are on CPAN
-   [CheckChangesHasContent] ; ensure Changes has been updated
-   [CheckExtraTests]   ; ensure xt/ tests pass
-   [TestRelease]       ; ensure t/ tests pass
-   [ConfirmRelease]    ; prompt before uploading
- 
-   ; releaser
-   [UploadToCPAN]      ; uploads to CPAN
- 
-   ; after release
-   [Git::Commit / Commit_Dirty_Files] ; commit Changes (as released)
- 
-   [Git::Tag]          ; tag repo with custom tag
-   tag_format = release-%v
- 
-   ; NextRelease acts *during* pre-release to write $VERSION and
-   ; timestamp to Changes and  *after* release to add a new {{$NEXT}}
-   ; section, so to act at the right time after release, it must actually
-   ; come after Commit_Dirty_Files but before Commit_Changes in the
-   ; dist.ini.  It will still act during pre-release as usual
- 
-   [NextRelease]
- 
-   [Git::Commit / Commit_Changes] ; commit Changes (for new dev)
- 
-   [Git::Push]         ; push repo to remote
-   push_to = origin
-
-=for stopwords autoprereq dagolden fakerelease pluginbundle podweaver
-taskweaver uploadtocpan dist ini
-
-=for Pod::Coverage configure mvp_multivalue_args
-
-=head1 USAGE
-
-To use this PluginBundle, just add it to your dist.ini.  You can provide
-the following options:
-
-=over
-
-=item *
-
-C<<< is_task >>> -- this indicates whether TaskWeaver or PodWeaver should be used.
-Default is 0.
-
-=item *
-
-C<<< auto_prereq >>> -- this indicates whether AutoPrereq should be used or not.
-Default is 1.
-
-=item *
-
-C<<< tag_format >>> -- given to C<<< Git::Tag >>>.  Default is 'release-%v' to be more
-robust than just the version number when parsing versions for
-C<<< Git::NextVersion >>>
-
-=item *
-
-C<<< version_regexp >>> -- given to C<<< Git::NextVersion >>>.  Default
-is '^release-(.+)$'
-
-=item *
-
-C<<< fake_release >>> -- swaps FakeRelease for UploadToCPAN. Mostly useful for
-testing a dist.ini without risking a real release.
-
-=item *
-
-C<<< weaver_config >>> -- specifies a Pod::Weaver bundle.  Defaults to @DAGOLDEN.
-
-=item *
-
-C<<< stopwords >>> -- add stopword for Test::PodSpelling (can be repeated)
-
-=item *
-
-C<<< no_critic >>> -- omit Test::Perl::Critic tests
-
-=item *
-
-C<<< no_spellcheck >>> -- omit Test::PodSpelling tests
-
-=item *
-
-C<<< no_bugtracker >>> -- DEPRECATED
-
-=back
-
-This PluginBundle now supports ConfigSlicer, so you can pass in options to the
-plugins used like this:
-
-   [@DAGOLDEN]
-   ExecDir.dir = scripts ; overrides ExecDir
-
-=head1 COMMON PATTERNS
-
-=head2 use github instead of RT
-
-   [@DAGOLDEN]
-   :version = 0.32
-   AutoMetaResources.bugtracker.github = user:dagolden
-   AutoMetaResources.bugtracker.rt = 0
-
-=head1 SEE ALSO
-
-=over
-
-=item *
-
-L<Dist::Zilla>
-
-=item *
-
-L<Dist::Zilla::Plugin::PodWeaver>
-
-=item *
-
-L<Dist::Zilla::Plugin::TaskWeaver>
-
-=back
-
-=for :stopwords cpan testmatrix url annocpan anno bugtracker rt cpants kwalitee diff irc mailto metadata placeholders metacpan
-
-=head1 SUPPORT
-
-=head2 Bugs / Feature Requests
-
-Please report any bugs or feature requests through the issue tracker
-at L<https://rt.cpan.org/Public/Dist/Display.html?Name=Dist-Zilla-PluginBundle-DAGOLDEN>.
-You will be notified automatically of any progress on your issue.
-
-=head2 Source Code
-
-This is open source software.  The code repository is available for
-public review and contribution under the terms of the license.
-
-L<https://github.com/dagolden/dist-zilla-pluginbundle-dagolden>
-
-  git clone git://github.com/dagolden/dist-zilla-pluginbundle-dagolden.git
-
-=head1 AUTHOR
-
-David Golden <dagolden@cpan.org>
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is Copyright (c) 2012 by David Golden.
-
-This is free software, licensed under:
-
-  The Apache License, Version 2.0, January 2004
-
-=cut
