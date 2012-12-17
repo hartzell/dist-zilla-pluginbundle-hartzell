@@ -5,6 +5,10 @@ package Dist::Zilla::PluginBundle::HARTZELL;
 
 # ABSTRACT: Implement hartzell's way.
 
+=for stopwords
+autoprereqs configslicer dagolden's fakerelease podweaver str
+taskweaver uploadtocpan hartzell's ini ishness stopworks
+
 =head1 SYNOPSIS
 
    # in dist.ini
@@ -22,7 +26,7 @@ CPAN I decided to model mine on DAGOLDEN's (I like his use of
 ConfigSlicer and various config options).  As it stands now it's
 nearly a copy of his work but as my personal preferences assert
 themselves I expect it to diverge.  For now I have a lot of
-github-ishness and Meta info stuff to catch up on.
+github and Meta info stuff to catch up on.
 
 In its default form it is roughly equivalent to the following
 dist.ini:
@@ -201,7 +205,7 @@ sub mvp_multivalue_args { qw/stopwords/ }
 
 =attr stopwords
 
-Moose ArrayRef attribute that keeps track of a list of stopworks for
+Moose ArrayRef attribute that keeps track of a list of stopwords for
 various spelling tasks.  Defaults to an empty list, controlled by
 'stopwords' lines in the dist.ini.  There can be multiple stopwords
 lines in the dist.ini file.
