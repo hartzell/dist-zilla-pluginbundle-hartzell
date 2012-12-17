@@ -359,7 +359,6 @@ sub configure {
 
                      # file munging
                      'PkgVersion',
-                     'InsertCopyright',
                      ( $self->is_task
                        ?  'TaskWeaver'
                        : [ 'PodWeaver' => { config_plugin => $self->weaver_config } ]
