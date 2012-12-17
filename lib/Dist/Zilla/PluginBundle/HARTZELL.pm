@@ -137,67 +137,16 @@ It is roughly equivalent to the following dist.ini:
    [Git::Push]         ; push repo to remote
    push_to = origin
 
+=head2 Usage
 
-=head1 USAGE
+To use this PluginBundle, just add it to your dist.ini.  See the
+L</ATTRIBUTES> section for user configurable options.
 
-To use this PluginBundle, just add it to your dist.ini.  You can provide
-the following options:
-
-=over
-
-=item *
-
-C<<< is_task >>> -- this indicates whether TaskWeaver or PodWeaver should be used.
-Default is 0.
-
-=item *
-
-C<<< auto_prereq >>> -- this indicates whether AutoPrereq should be used or not.
-Default is 1.
-
-=item *
-
-C<<< tag_format >>> -- given to C<<< Git::Tag >>>.  Default is 'release-%v' to be more
-robust than just the version number when parsing versions for
-C<<< Git::NextVersion >>>
-
-=item *
-
-C<<< version_regexp >>> -- given to C<<< Git::NextVersion >>>.  Default
-is '^release-(.+)$'
-
-=item *
-
-C<<< fake_release >>> -- swaps FakeRelease for UploadToCPAN. Mostly useful for
-testing a dist.ini without risking a real release.
-
-=item *
-
-C<<< weaver_config >>> -- specifies a Pod::Weaver bundle.  Defaults to @Default.
-
-=item *
-
-C<<< stopwords >>> -- add stopword for Test::PodSpelling (can be repeated)
-
-=item *
-
-C<<< no_critic >>> -- omit Test::Perl::Critic tests
-
-=item *
-
-C<<< no_spellcheck >>> -- omit Test::PodSpelling tests
-
-=item *
-
-C<<< no_bugtracker >>> -- DEPRECATED
-
-=back
-
-This PluginBundle now supports ConfigSlicer, so you can pass in options to the
-plugins used like this:
+This PluginBundle supports ConfigSlicer, so you can pass in options to
+individual plugins directly if necessary.
 
    [@HARTZELL]
-   ExecDir.dir = scripts ; overrides ExecDir
+   ExecDir.dir = scripts ; overrides ExecDir's dir option
 
 =head1 COMMON PATTERNS
 
@@ -223,6 +172,10 @@ L<Dist::Zilla::Plugin::PodWeaver>
 
 L<Dist::Zilla::Plugin::TaskWeaver>
 
+=item *
+
+L<Dist::Zilla::PluginBundle::ConfigSlicer>
+
 =back
 
 =cut
@@ -237,11 +190,30 @@ use Dist::Zilla 4.3; # authordeps
 with 'Dist::Zilla::Role::PluginBundle::Easy';
 with 'Dist::Zilla::Role::PluginBundle::Config::Slicer';
 
-=for Pod::Coverage mvp_multivalue_args
+=method mvp_multivalue_args
+
+Returns the list of the dist.ini options that can take multiple
+values.  Currently returns qw/stopwords/.
 
 =cut
 
 sub mvp_multivalue_args { qw/stopwords/ }
+
+=attr stopwords
+
+Moose ArrayRef attribute that keeps track of a list of stopworks for
+various spelling tasks.  Defaults to an empty list, controlled by
+'stopwords' lines in the dist.ini.  There can be multiple stopwords
+lines in the dist.ini file.
+
+Do this:
+
+  stopwords = one two three
+  stopwords = some more words
+
+to build up your own list of stopwords.
+
+=cut
 
 has stopwords => (
   is      => 'ro',
@@ -252,12 +224,41 @@ has stopwords => (
   },
 );
 
+=attr fake_release
+
+Moose boolean attribute, when set to true the bundle swaps the
+FakeRelease plugin in place of the UploadToCPAN plugin. Mostly useful
+for testing a dist.ini without risking a real release.  Defaults to
+false, controlled by the value of the 'fake_release' dist.ini option.
+
+Do this:
+
+  fake_release = 1
+
+to do a fake release.  
+
+=cut 
+
 has fake_release => (
   is      => 'ro',
   isa     => 'Bool',
   lazy    => 1,
   default => sub { $_[0]->payload->{fake_release} },
 );
+
+=attr no_critic
+
+Moose boolean attribute, when set to true it disables the Perl::Critic
+tests.  Defaults to false, controlled by the value of the 'no_critic'
+dist.ini option.
+
+Do this:
+
+  no_critic = 1
+
+to do disable critic testing.
+
+=cut 
 
 has no_critic => (
   is      => 'ro',
@@ -267,6 +268,20 @@ has no_critic => (
     exists $_[0]->payload->{no_critic} ? $_[0]->payload->{no_critic} : 0
   },
 );
+
+=attr no_spellcheck
+
+Moose boolean attribute, when set to true it disables the
+Test::PodSpelling tests.  Defaults to false, controlled by the value
+of the 'no_spellcheck' dist.ini option.
+
+Do this:
+
+  no_spellcheck = 1
+
+to do disable spell checking.
+
+=cut
 
 has no_spellcheck => (
   is      => 'ro',
@@ -279,6 +294,20 @@ has no_spellcheck => (
   },
 );
 
+=attr is_task
+
+Moose boolean attribute, when set to true it loads TaskWeaver instead
+of PodWeaver.  Defaults to false, controlled by the value of the
+'is_task' dist.ini option.
+
+Do this:
+
+  is_task = 1
+
+to build a Task:: distribution.
+
+=cut
+
 has is_task => (
   is      => 'ro',
   isa     => 'Bool',
@@ -286,14 +315,41 @@ has is_task => (
   default => sub { $_[0]->payload->{is_task} },
 );
 
-has auto_prereq => (
+=attr use_autoprereqs
+
+Moose boolean attribute, when set to true it loads the AutoPrereqs
+plugin.  Defaults to true, controlled by the value of the
+'use_autoprereqs' dist.ini option.
+
+Do this:
+
+  use_autoprereqs = 0
+
+to do disable AutoPrereqs.
+
+=cut
+
+has use_autoprereqs => (
   is      => 'ro',
   isa     => 'Bool',
   lazy    => 1,
   default => sub {
-    exists $_[0]->payload->{auto_prereq} ? $_[0]->payload->{auto_prereq} : 1
+    exists $_[0]->payload->{use_autoprereqs} ? $_[0]->payload->{use_autoprereqs} : 1
   },
 );
+
+=attr tag_format
+
+Moose Str attribute, defines the format used by Git::Tag.  Defaults to
+'release-%v', controlled by the value of the 'tag_format' dist.ini option.
+
+Do this:
+
+  tag_format = my-release-%v
+
+to set it to something other than the default.
+
+=cut
 
 has tag_format => (
   is      => 'ro',
@@ -304,6 +360,20 @@ has tag_format => (
   },
 );
 
+=attr version_regexp
+
+Moose Str attribute, defines the regexp that Git::NextVersion uses to
+figure out the current version.  Defaults to '^release-(.+)$' and is
+controlled by the value of the 'version_regexp' dist.ini option.
+
+Do this:
+
+  version_regexp = ^my-release-(.+)$
+
+to set it to something other than the default.
+
+=cut
+
 has version_regexp => (
   is      => 'ro',
   isa     => 'Str',
@@ -313,12 +383,39 @@ has version_regexp => (
   },
 );
 
+=attr weaver_config
+
+Moose Str attribute, controls the name of the PodWeaver configuration.
+Defaults to '@Default', controlled by the value of the 'weaver_config'
+dist.ini option.
+
+Do this:
+
+  weaver_config = @DAGOLDEN
+
+to e.g. use Pod::Weaver::PluginBundle::DAGOLDEN.
+
+=cut
+
 has weaver_config => (
   is      => 'ro',
   isa     => 'Str',
   lazy    => 1,
   default => sub { $_[0]->payload->{weaver_config} || '@Default' },
 );
+
+=attr git_remote
+
+Moose Str attribute, controls the name of the git remote.  Defaults to
+'origin', controlled by the value of the 'git_remote' dist.ini option.
+
+Do this:
+
+  git_remote = 'something_else'
+
+to use something other than the default.
+
+=cut
 
 has git_remote => (
   is      => 'ro',
@@ -329,14 +426,9 @@ has git_remote => (
   },
 );
 
-has no_bugtracker => ( # XXX deprecated
-  is      => 'ro',
-  isa     => 'Bool',
-  lazy    => 1,
-  default => 0,
-);
+=method configure
 
-=for Pod::Coverage configure
+Does the heavy lifting, adds the plugins, etc....
 
 =cut
 
@@ -390,7 +482,7 @@ sub configure {
                      
                      # metadata
                      'MinimumPerl',
-                     ( $self->auto_prereq
+                     ( $self->use_autoprereqs
                        ? [ 'AutoPrereqs' => { skip => "^t::lib" } ]
                        : ()
                      ),
