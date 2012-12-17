@@ -2,5 +2,7 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.001     2012-12-16 17:33:00 America/Los_Angeles
+
   * Initial release, basically a fork of DAGOLDEN's bundle with some of
     my personal preferences asserted.
