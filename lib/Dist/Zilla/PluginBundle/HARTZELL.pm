@@ -24,7 +24,8 @@ nearly a copy of his work but as my personal preferences assert
 themselves I expect it to diverge.  For now I have a lot of
 github-ishness and Meta info stuff to catch up on.
 
-It is roughly equivalent to the following dist.ini:
+In its default form it is roughly equivalent to the following
+dist.ini:
 
    ; version provider
    [Git::NextVersion]  ; get version from last release tag
@@ -34,22 +35,22 @@ It is roughly equivalent to the following dist.ini:
    [Git::GatherDir]         ; everything from git ls-files
    exclude_filename = README.pod   ; skip this generated file
    exclude_filename = META.json    ; skip this generated file
+   exclude_filename = cpanfile     ; skip this generated file
  
    [PruneCruft]        ; default stuff to skip
    [ManifestSkip]      ; if -f MANIFEST.SKIP, skip those, too
  
    ; file modifications
    [PkgVersion]        ; add $VERSION = ... to all files
-   [InsertCopyright]   ; add copyright at "# COPYRIGHT"
    [PodWeaver]         ; generate Pod
    config_plugin = @DEFAULT
  
    ; generated files
-   [License]           ; boilerplate license
    [ReadmeFromPod]     ; from Pod (runs after PodWeaver)
+   [License]           ; boilerplate license
    [ReadmeAnyFromPod]  ; create README.md in repo directory
-   type = md           ; this makes github happy....
-   filename = README.md
+   type = pod          ; this makes github happy....
+   filename = README.pod
    location = root
  
    ; t tests
@@ -66,11 +67,9 @@ It is roughly equivalent to the following dist.ini:
    [Test::Version]     ; xt/release/test-version.t
  
    ; metadata
+   [MinimumPerl]       ; determine minimum perl version
    [AutoPrereqs]       ; find prereqs from code
    skip = ^t::lib
- 
-   [MinimumPerl]       ; determine minimum perl version
- 
    [MetaNoIndex]       ; sets 'no_index' in META
    directory = t
    directory = xt
@@ -78,13 +77,13 @@ It is roughly equivalent to the following dist.ini:
    directory = corpus
    package = DB        ; just in case
  
+   [MetaProvides::Package] ; add 'provides' to META files
+   meta_noindex = 1        ; respect prior no_index directives
+ 
    [AutoMetaResources] ; set META resources
    bugtracker.github  = user:hartzell
    repository.github  = user:hartzell
    homepage           = https://metacpan.org/release/%{dist}
- 
-   [MetaProvides::Package] ; add 'provides' to META files
-   meta_noindex = 1        ; respect prior no_index directives
  
    [MetaYAML]          ; generate META.yml (v1.4)
    [MetaJSON]          ; generate META.json (v2)
@@ -94,19 +93,18 @@ It is roughly equivalent to the following dist.ini:
    [ShareDir]          ; include 'share/' for File::ShareDir
    [Module::Build]     ; create Build.PL
  
-   ; manifest (after all generated files)
-   [Manifest]          ; create MANIFEST
- 
    ; copy META.json back to repo dis
    [CopyFilesFromBuild]
-   copy = META.json
+   copy = cpanfile
+ 
+   ; manifest (after all generated files)
+   [Manifest]          ; create MANIFEST
  
    ; before release
    [Git::Check]        ; ensure all files checked in
    allow_dirty = dist.ini
    allow_dirty = Changes
    allow_dirty = README.pod
-   allow_dirty = META.json
  
    [CheckMetaResources]     ; ensure META has 'resources' data
    [CheckPrereqsIndexed]    ; ensure prereqs are on CPAN
@@ -120,6 +118,9 @@ It is roughly equivalent to the following dist.ini:
  
    ; after release
    [Git::Commit / Commit_Dirty_Files] ; commit Changes (as released)
+   allow_dirty = dist.ini
+   allow_dirty = Changes
+   allow_dirty = README.pod
  
    [Git::Tag]          ; tag repo with custom tag
    tag_format = release-%v
@@ -133,6 +134,7 @@ It is roughly equivalent to the following dist.ini:
    [NextRelease]
  
    [Git::Commit / Commit_Changes] ; commit Changes (for new dev)
+   commit_msg = bump Changes
  
    [Git::Push]         ; push repo to remote
    push_to = origin
@@ -153,7 +155,6 @@ individual plugins directly if necessary.
 =head2 nothing much to see here for now....
 
    [@HARTZELL]
-   :version = 0.32
    fakerelease = 1
 
 =head1 SEE ALSO
@@ -182,7 +183,6 @@ L<Dist::Zilla::PluginBundle::ConfigSlicer>
 
 use autodie 2.00;
 use Moose 0.99;
-use Moose::Autobox;
 use namespace::autoclean 0.09;
 
 use Dist::Zilla 4.3; # authordeps
@@ -519,7 +519,7 @@ sub configure {
                      # before release
                      [ 'Git::Check' =>
                        {
-                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
+                        allow_dirty => [qw/dist.ini Changes README.pod/]
                        }
                      ],
                      'CheckMetaResources',
@@ -539,7 +539,7 @@ sub configure {
                      # commit dirty Changes, dist.ini, README.pod, META.json
                      [ 'Git::Commit' => 'Commit_Dirty_Files' =>
                        {
-                        allow_dirty => [qw/dist.ini Changes README.pod META.json/]
+                        allow_dirty => [qw/dist.ini Changes README.pod/]
                        }
                      ],
                      [ 'Git::Tag' => { tag_format => $self->tag_format } ],
@@ -558,6 +558,3 @@ sub configure {
 __PACKAGE__->meta->make_immutable;
 
 1;
-
-__END__
-
