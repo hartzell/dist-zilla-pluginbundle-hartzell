@@ -2,5 +2,5 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
-* Initial release, basically a fork of DAGOLDEN's bundle with some of
-  my personal preferences asserted.
+  * Initial release, basically a fork of DAGOLDEN's bundle with some of
+    my personal preferences asserted.
