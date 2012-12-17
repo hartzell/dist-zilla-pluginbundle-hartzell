@@ -234,31 +234,6 @@ use namespace::autoclean 0.09;
 
 use Dist::Zilla 4.3; # authordeps
 
-use Dist::Zilla::PluginBundle::Filter ();
-use Dist::Zilla::PluginBundle::Git 1.121010 ();
-
-use Dist::Zilla::Plugin::AutoMetaResources ();
-use Dist::Zilla::Plugin::CheckChangesHasContent ();
-use Dist::Zilla::Plugin::CheckExtraTests ();
-use Dist::Zilla::Plugin::CheckMetaResources 0.001 ();
-use Dist::Zilla::Plugin::CheckPrereqsIndexed 0.002 ();
-use Dist::Zilla::Plugin::CopyFilesFromBuild ();
-use Dist::Zilla::Plugin::Git::NextVersion ();
-use Dist::Zilla::Plugin::InsertCopyright 0.001 ();
-use Dist::Zilla::Plugin::MetaNoIndex ();
-use Dist::Zilla::Plugin::MetaProvides::Package 1.14 (); # hides DB/main/private packages
-use Dist::Zilla::Plugin::MinimumPerl ();
-use Dist::Zilla::Plugin::PkgVersion ();
-use Dist::Zilla::Plugin::PodWeaver ();
-use Dist::Zilla::Plugin::ReadmeAnyFromPod 0.120051 ();
-use Dist::Zilla::Plugin::ReadmeFromPod ();
-use Dist::Zilla::Plugin::TaskWeaver 0.101620 ();
-use Dist::Zilla::Plugin::Test::Compile ();
-use Dist::Zilla::Plugin::Test::Perl::Critic ();
-use Dist::Zilla::Plugin::Test::PodSpelling 2.001002 ();
-use Dist::Zilla::Plugin::Test::Portability ();
-use Dist::Zilla::Plugin::Test::Version ();
-
 with 'Dist::Zilla::Role::PluginBundle::Easy';
 with 'Dist::Zilla::Role::PluginBundle::Config::Slicer';
 
