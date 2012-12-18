@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-Dist::Zilla::PluginBundle::HARTZELL - Implement hartzell's way.
+Dist::Zilla::PluginBundle::HARTZELL - My standard dzil config.
 
 =head1 VERSION
 
-version 0.004
+version 0.005
 
 =head1 SYNOPSIS
 

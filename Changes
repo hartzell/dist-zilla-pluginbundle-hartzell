@@ -2,6 +2,9 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * make some prereq recommendations for testing phase
+  * touch up abstract
+
 0.004     2012-12-18 10:31:53 America/Los_Angeles
 
   * make a real cpan release (removed fake_release from dist.ini)
