@@ -5,9 +5,6 @@ package Dist::Zilla::PluginBundle::HARTZELL;
 
 # ABSTRACT: Implement hartzell's way.
 
-=for stopwords autoprereqs configslicer dagolden's fakerelease podweaver str
-taskweaver uploadtocpan hartzell's dist.ini ishness stopworks 
-
 =head1 SYNOPSIS
 
    # in dist.ini
