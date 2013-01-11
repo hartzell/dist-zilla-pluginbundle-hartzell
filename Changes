@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.006     2013-01-10 16:13:56 America/Los_Angeles
+
   * compose both the Easy and Config::Slicer roles in
     a single with statement, better Best Practice.
 
