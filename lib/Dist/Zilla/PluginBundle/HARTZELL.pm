@@ -187,8 +187,8 @@ use namespace::autoclean 0.09;
 
 use Dist::Zilla 4.3; # authordeps
 
-with 'Dist::Zilla::Role::PluginBundle::Easy';
-with 'Dist::Zilla::Role::PluginBundle::Config::Slicer';
+with qw(Dist::Zilla::Role::PluginBundle::Easy
+        Dist::Zilla::Role::PluginBundle::Config::Slicer);
 
 =method mvp_multivalue_args
 
