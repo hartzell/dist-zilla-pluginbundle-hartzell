@@ -2,6 +2,9 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * compose both the Easy and Config::Slicer roles in
+    a single with statement, better Best Practice.
+
 0.005     2012-12-18 14:11:22 America/Los_Angeles
 
   * make some prereq recommendations for testing phase
