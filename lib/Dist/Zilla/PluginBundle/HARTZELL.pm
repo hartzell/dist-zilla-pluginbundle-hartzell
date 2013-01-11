@@ -3,7 +3,7 @@ use strict;
 use warnings;
 package Dist::Zilla::PluginBundle::HARTZELL;
 
-# ABSTRACT: Implement hartzell's way.
+# ABSTRACT: My standard dzil config.
 
 =head1 SYNOPSIS
 
