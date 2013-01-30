@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.008     2013-01-30 15:01:13 America/Los_Angeles
+
   * add a POD section for Roles Consumed to the @HARTZELL weaver
     bundle.
 
