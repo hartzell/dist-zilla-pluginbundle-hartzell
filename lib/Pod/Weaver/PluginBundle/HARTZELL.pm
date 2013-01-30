@@ -65,6 +65,7 @@ sub mvp_bundle_config {
         [ 'Methods',    _exp('Collect'), { command => 'method' } ],
         [ 'Functions',  _exp('Collect'), { command => 'func' } ],
         [ 'Requires',   _exp('Collect'), { command => 'requires' } ],
+        [ 'With Roles', _exp('Collect'), { command => 'with' } ],
         )
     {
         $plugin->[2]{header} = uc $plugin->[0];

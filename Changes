@@ -2,6 +2,9 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * add a POD section for Roles Consumed to the @HARTZELL weaver
+    bundle.
+
 0.007     2013-01-24 15:50:47 America/Los_Angeles
 
   * add Pod::Weaver::PluginBundle::HARTZELL
