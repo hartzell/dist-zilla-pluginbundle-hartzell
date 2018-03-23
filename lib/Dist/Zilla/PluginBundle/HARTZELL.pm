@@ -505,7 +505,7 @@ sub configure {
                      # build system
                      'ExecDir',            # core
                      'ShareDir',           # core
-                     'ModuleBuild',          # core
+                     [ 'MakeMaker' => { eumm_version => '6.17', default_jobs => 9 } ], # core
 
                      # copy files from build back to root for inclusion in VCS
                      [ CopyFilesFromBuild => {
