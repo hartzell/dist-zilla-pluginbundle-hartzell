@@ -106,6 +106,7 @@ dist.ini:
    allow_dirty = dist.ini
    allow_dirty = Changes
    allow_dirty = README.pod
+   allow_dirty = cpanfile
  
    [CheckMetaResources]     ; ensure META has 'resources' data
    [CheckPrereqsIndexed]    ; ensure prereqs are on CPAN
@@ -521,7 +522,7 @@ sub configure {
                      # before release
                      [ 'Git::Check' =>
                        {
-                        allow_dirty => [qw/dist.ini Changes README.pod/]
+                        allow_dirty => [qw/dist.ini Changes README.pod cpanfile/]
                        }
                      ],
                      'CheckMetaResources',
