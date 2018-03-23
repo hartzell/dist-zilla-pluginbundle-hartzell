@@ -92,6 +92,7 @@ dist.ini:
    [ExecDir]           ; include 'bin/*' as executables
    [ShareDir]          ; include 'share/' for File::ShareDir
    [Module::Build]     ; create Build.PL
+   [CPANFile]          ; build a cpanfile
  
    ; copy META.json back to repo dis
    [CopyFilesFromBuild]
@@ -506,6 +507,7 @@ sub configure {
                      'ExecDir',            # core
                      'ShareDir',           # core
                      [ 'MakeMaker' => { eumm_version => '6.17', default_jobs => 9 } ], # core
+                     'CPANFile',
 
                      # copy files from build back to root for inclusion in VCS
                      [ CopyFilesFromBuild => {
