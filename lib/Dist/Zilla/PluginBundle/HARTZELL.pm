@@ -35,7 +35,6 @@ dist.ini:
    [Git::GatherDir]         ; everything from git ls-files
    exclude_filename = README.pod   ; skip this generated file
    exclude_filename = META.json    ; skip this generated file
-   exclude_filename = cpanfile     ; skip this generated file
  
    [PruneCruft]        ; default stuff to skip
    [ManifestSkip]      ; if -f MANIFEST.SKIP, skip those, too
@@ -447,7 +446,7 @@ sub configure {
                      # gather and prune
                      # skip things that are also already in the build dir
                      [ 'Git::GatherDir' =>
-                       { exclude_filename => [qw/README.pod META.json cpanfile/] }], # core
+                       { exclude_filename => [qw/README.pod META.json/] }], # core
                      'PruneCruft',         # core
                      'ManifestSkip',       # core
 
