@@ -2,6 +2,9 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * Don't exclude the cpanfile from [Git::GatherDir],
+    so that it gets included in the distribution.
+
 0.010     2018-03-23 16:39:45-07:00 America/Los_Angeles
 
   * Include the CPANFile plugin.
